@@ -5,7 +5,7 @@ import $ from 'jquery';
 * Embed a Google Docs publishable URL within a page as if it were an inline DOM component
 *
 * @param {string} url The Published URL of the document
-* @param {Object} [urlOptions] Additional options to provide to `fetch()` when retrieveing the document contents
+* @param {Object} [urlOptions] Additional options to provide to `fetch()` when retrieving the document contents
 * @param {array} [fixes] Fixes to apply to the retrieved document in order, see code for default list of fixes
 * @param {Object} [customFixes] An object lookup of custom fixes to apply, each fix should either return `undefined` (to carry on with processing on the top level document) or a jQuery object as a replacement body
 *
