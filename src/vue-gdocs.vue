@@ -4,22 +4,28 @@ import $ from 'jquery';
 /**
 * Embed a Google Docs publishable URL within a page as if it were an inline DOM component
 *
-* @param {string} url The Published URL of the document
+* @param {String} url The Published URL of the document
 * @param {Object} [urlOptions] Additional options to provide to `fetch()` when retrieving the document contents
-* @param {array} [fixes] Fixes to apply to the retrieved document in order, see code for default list of fixes
+* @param {Boolean} [follow=false] Handle all document-to-document links by replacing the current document contents, if false link will act like a regular link
+* @param {Array} [fixes] Fixes to apply to the retrieved document in order, see code for default list of fixes
 * @param {Object} [customFixes] An object lookup of custom fixes to apply, each fix should either return `undefined` (to carry on with processing on the top level document) or a jQuery object as a replacement body
+*
+* @emits click-link Emitted as `({event, url})` when a link is clicked within the document, use `event.preventDefault()` to prevent auto-opening
 *
 * @slot loading Loading area - defaults to a Font-Awesome spinner + "Loading..." text
 */
 export default {
 	data() { return {
 		isLoading: true,
+		docUrl: this.url, // Copy from prop initally, but can be overriden if following other doc links
 		html: undefined,
 	}},
 	props: {
 		url: {type: String, required: true},
 		urlOptions: {type: Object},
+		follow: {type: Boolean, default: false},
 		fixes: {type: Array, default() { return [
+			'bodyRoot',
 			'bodyPadding',
 			'bodyWidth',
 			'linkTargets',
@@ -35,7 +41,8 @@ export default {
 		refresh() {
 			return Promise.resolve()
 				.then(()=> this.isLoading = true)
-				.then(()=> fetch(this.url, this.urlOptions))
+				.then(()=> this.docUrl || Promise.reject('No Google Doc URL specified'))
+				.then(()=> fetch(this.docUrl, this.urlOptions))
 				.then(res => res.text())
 				.then(html => $.parseHTML(html)) // Parse into "safe" HTML
 				.then(html => $(html).toArray().find(el => el.id == 'contents')) // extract contents div only
@@ -56,6 +63,17 @@ export default {
 
 
 		// Document fixes {{{
+		/**
+		* Remove main document maximum-width restrictions
+		*/
+		fixBodyRoot(doc) {
+			doc
+				.children('div')
+				.first()
+				.addClass('gdoc-root')
+		},
+
+
 		/**
 		* Remove main document padding
 		*/
@@ -106,6 +124,23 @@ export default {
 	},
 	created() {
 		this.refresh();
+	},
+	mounted() {
+		var vm = this;
+		$(this.$el).on('click', 'a', e => {
+			var url = $(e.target).attr('href');
+			if (!url) return; // Not a Href - ignore
+
+			vm.$emit('click-link', {url, event: e});
+			if (
+				vm.follow // We can follow the link AND
+				&& !event.defaultPrevented // Above emitter didn't stop us AND
+				&& /^https:\/\/docs\.google\.com\/document\/.+\/pub$/.test(url) // Cross-link to another GDoc file
+			) { // Replace this GDoc URL with new URL
+				vm.docUrl = url;
+				vm.refresh();
+			}
+		});
 	},
 }
 </script>

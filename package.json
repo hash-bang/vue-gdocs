@@ -1,6 +1,6 @@
 {
   "name": "vue-gdocs",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Vue component to embed Google Docs content",
   "main": "src/vue-gdocs.vue",
   "repository": {
