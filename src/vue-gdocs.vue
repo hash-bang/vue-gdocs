@@ -137,6 +137,7 @@ export default {
 				&& !event.defaultPrevented // Above emitter didn't stop us AND
 				&& /^https:\/\/docs\.google\.com\/document\/.+\/pub$/.test(url) // Cross-link to another GDoc file
 			) { // Replace this GDoc URL with new URL
+				event.preventDefault();
 				vm.docUrl = url;
 				vm.refresh();
 			}
